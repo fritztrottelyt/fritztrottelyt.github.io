@@ -1,0 +1,40 @@
+name: Generate sitemap 
+
+on:
+  push:
+    branches: [ main ]
+    paths: [ '**.html' ]
+
+jobs:
+  sitemap:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout the repo
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0 
+    
+    - name: generate-sitemap
+      id: sitemap
+      uses: cicirello/generate-sitemap@v1.10.1
+      with:
+        base-url-path: https://fritztrottelyt.github.io/
+    
+    - name: Output stats
+      run: |
+        echo "sitemap-path = ${{ steps.sitemap.outputs.sitemap-path }}"
+        echo "url-count = ${{ steps.sitemap.outputs.url-count }}"
+        echo "excluded-count = ${{ steps.sitemap.outputs.excluded-count }}"
+    
+    - name: Commit and push
+      run: |
+        if [[ `git status --porcelain sitemap.xml` ]]; then
+          git config --global user.name 'github-actions'
+          git config --global user.email 'github-actions@github.com'
+          git add sitemap.xml
+          git commit -m "Automated sitemap update" sitemap.xml
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/fritztrottelyt/fritztrottelyt.github.io.git HEAD:main
+        fi
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
